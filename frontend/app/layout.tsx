@@ -30,7 +30,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return (
+  return ( 
     <html
       lang="en"
       className={`${plus_Jakarta_Sans.variable} ${geistMono.variable} h-full dark antialiased`}

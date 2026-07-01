@@ -1,7 +1,19 @@
+import math
 from fastapi import FastAPI , UploadFile,File
 import shutil
 import pandas as pd
 from fastapi.middleware.cors import CORSMiddleware
+
+
+def sanitize_for_json(obj):
+    """Recursively convert NaN/Inf to None for JSON compliance."""
+    if isinstance(obj, dict):
+        return {k: sanitize_for_json(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [sanitize_for_json(item) for item in obj]
+    elif isinstance(obj, float) and (math.isnan(obj) or math.isinf(obj)):
+        return None
+    return obj
 
 
 app=FastAPI()
@@ -27,10 +39,11 @@ async def upload(file: UploadFile= File(...)):
     else:
         df=pd.read_excel(destination_path)
 
-    
+    df = df.where(pd.notnull(df), None)
     rows,cols=df.shape
     col_names=df.columns.to_list()
     preview=df.head(10).to_dict(orient="records")
+    preview = sanitize_for_json(preview)
     return {"filename":file.filename,
             "content_type": file.content_type,"rows":rows,
             "columns":cols,"column_names":col_names, "preview":preview}

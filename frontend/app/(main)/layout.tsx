@@ -7,9 +7,11 @@ export default function MainLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <SidebarProvider>
+    <SidebarProvider className="h-screen overflow-hidden">
       <AppSidebar />
-      <main className="flex-1">{children}</main>
+      <main className="flex flex-1 flex-col min-h-0 overflow-hidden">
+        {children}
+      </main>
     </SidebarProvider>
   );
 }
