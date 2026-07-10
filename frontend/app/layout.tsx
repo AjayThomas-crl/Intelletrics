@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/app-sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -31,21 +30,14 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return (
+  return ( 
     <html
       lang="en"
       className={`${plus_Jakarta_Sans.variable} ${geistMono.variable} h-full dark antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <TooltipProvider>
-          <SidebarProvider>
-            <AppSidebar />
-
-            <main className="flex-1">
-              <SidebarTrigger />
-              {children}
-            </main>
-          </SidebarProvider>
+          <main className="flex-1">{children}</main>
         </TooltipProvider>
       </body>
     </html>
