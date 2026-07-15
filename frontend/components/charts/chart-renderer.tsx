@@ -14,12 +14,13 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart";
 
-// Backend response type — matches the API exactly
+
 export interface BackendChart {
   chart: string;
   column: string;
   labels: (string | number)[];
   values: number[];
+  description?: string;
 }
 
 export interface BackendProfile {
@@ -138,27 +139,24 @@ function HistogramView({ chart, profile }: { chart: BackendChart; profile?: Back
           radius={[2, 2, 0, 0]}
         />
       </BarChart>
-      {profile && profile.statistics && (
-        <div className="mt-2 grid grid-cols-3 gap-x-3 gap-y-1 px-1 text-[11px] text-muted-foreground">
-          <span>Mean: <strong className="text-foreground">{fmtStat(profile.statistics.mean)}</strong></span>
-          <span>Median: <strong className="text-foreground">{fmtStat(profile.statistics.median)}</strong></span>
-          <span>Std: <strong className="text-foreground">{fmtStat(profile.statistics.std)}</strong></span>
-          <span>Min: <strong className="text-foreground">{fmtStat(profile.statistics.min)}</strong></span>
-          <span>Max: <strong className="text-foreground">{fmtStat(profile.statistics.max)}</strong></span>
-          <span>Missing: <strong className="text-foreground">{profile.missing.count} ({profile.missing.percentage}%)</strong></span>
-        </div>
-      )}
     </ChartContainer>
   );
 }
 
-function ChartCard({ title, children }: { title: string; children: React.ReactNode }) {
+function ChartCard({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
   return (
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
       </CardHeader>
-      <CardContent>{children}</CardContent>
+      <CardContent>
+        {children}
+        {description && (
+          <p className="mt-2 text-[11px] text-muted-foreground/70 leading-relaxed">
+            {description}
+          </p>
+        )}
+      </CardContent>
     </Card>
   );
 }
@@ -169,19 +167,19 @@ export function ChartRenderer({ chart, profile }: { chart: BackendChart; profile
   switch (chartType) {
     case "bar":
       return (
-        <ChartCard title={chart.column}>
+        <ChartCard title={chart.column} description={chart.description}>
           <BarChartView chart={chart} />
         </ChartCard>
       );
     case "histogram":
       return (
-        <ChartCard title={chart.column}>
+        <ChartCard title={chart.column} description={chart.description}>
           <HistogramView chart={chart} profile={profile} />
         </ChartCard>
       );
     default:
       return (
-        <ChartCard title={chart.column}>
+        <ChartCard title={chart.column} description={chart.description}>
           <BarChartView chart={chart} />
         </ChartCard>
       );

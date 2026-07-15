@@ -1,9 +1,11 @@
 import math
-from fastapi import FastAPI , UploadFile,File
+from fastapi import FastAPI, UploadFile, File
+from pydantic import BaseModel
 import shutil
 import pandas as pd
 from profiler import profile_dataframe
-from chart_generator import generate_charts
+from chart_generator import generate_charts, charts_description
+from ai_insights import get_provider_chain, InsightsResult
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -20,38 +22,84 @@ def sanitize_for_json(obj):
     return obj
 
 
-app=FastAPI()
+app = FastAPI()
+
+ai_client = get_provider_chain()
 
 
 app.add_middleware(
-CORSMiddleware,
-allow_origins=["http://localhost:3000"],
-allow_methods=[""],
-allow_headers=[""],
-     )
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
 @app.get("/")
 def test():
     return "working"
-@app.post("/upload")
-async def upload(file: UploadFile= File(...)):
-    destination_path=f"saved_{file.filename}"
 
-    with open(destination_path,"wb") as buffer:
+
+@app.post("/upload")
+async def upload(file: UploadFile = File(...)):
+    destination_path = f"saved_{file.filename}"
+
+    with open(destination_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
-    if(file.filename.lower().endswith(".csv")):
-        df=pd.read_csv(destination_path)
+    if file.filename.lower().endswith(".csv"):
+        df = pd.read_csv(destination_path)
     else:
-        df=pd.read_excel(destination_path)
+        df = pd.read_excel(destination_path)
 
     df = df.where(pd.notnull(df), None)
-    rows,cols=df.shape
-    col_names=df.columns.to_list()
-    preview=df.head(10).to_dict(orient="records")
+    rows, cols = df.shape
+    col_names = df.columns.to_list()
+    preview = df.head(10).to_dict(orient="records")
+    
+    profiler = profile_dataframe(df)
+    charts = generate_charts(df, profiler)
+    charts = charts_description(charts, profiler)
+    insights_result = await ai_client.generate_insights(profiler, file.filename or "", rows, cols)
+
     preview = sanitize_for_json(preview)
-    profiler=profile_dataframe(df)
-    charts=generate_charts(df,profiler)
     charts = sanitize_for_json(charts)
     profiler = sanitize_for_json(profiler)
-    return {"filename":file.filename,
-            "content_type": file.content_type,"rows":rows,
-            "columns":cols,"column_names":col_names, "preview":preview,"charts":charts,"profiles":profiler}
+    insights_raw = sanitize_for_json(insights_result.model_dump())
+    # insights_raw is guaranteed non-None (sanitize_for_json returns original type for dicts)
+    insights_data: dict = insights_raw  # type: ignore[assignment]
+
+    return {
+        "filename": file.filename,
+        "content_type": file.content_type,
+        "rows": rows,
+        "columns": cols,
+        "column_names": col_names,
+        "preview": preview,
+        "charts": charts,
+        "profiles": profiler,
+        "summary": insights_data["summary"],
+        "insights": insights_data["insights"],
+    }
+
+
+
+class InsightsRequest(BaseModel):
+    profiles: list[dict]
+    filename: str = ""
+    rows: int = 0
+    columns: int = 0
+
+
+class InsightsResponse(BaseModel):
+    insights: str
+
+
+@app.post("/insights", response_model=InsightsResponse)
+async def insights(req: InsightsRequest):
+    result = await ai_client.generate_insights(
+        profiles=req.profiles,
+        filename=req.filename,
+        rows=req.rows,
+        columns=req.columns,
+    )
+    return InsightsResponse(insights=result.summary)
