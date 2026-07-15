@@ -1,7 +1,6 @@
 import numpy as np
 import re
 
-
 def generate_charts(df, profiles):
     keywords = [
         "id",
@@ -48,4 +47,37 @@ def generate_charts(df, profiles):
         
         charts.append(c)
     
+    return charts
+
+def charts_description(charts: list[dict], profiles: list[dict]) -> list[dict]:
+    """Attach a one-line heuristic description to each chart.
+
+    No AI — uses the profiler stats directly.  Mutates and returns *charts*
+    with an added ``description`` field.
+    """
+    profile_map = {p["name"]: p for p in profiles}
+
+    for c in charts:
+        col = c["column"]
+        p = profile_map.get(col, {})
+        ptype = p.get("type", "")
+        missing = p.get("missing", {}).get("count", 0)
+        missing_pct = p.get("missing", {}).get("percentage", 0.0)
+
+        if ptype == "numeric":
+            stats = p.get("statistics", {})
+            parts = [
+                f"Range {stats.get('min','?')}–{stats.get('max','?')}",
+                f"median {stats.get('median','?')}",
+            ]
+            if missing:
+                parts.append(f"{missing} missing ({missing_pct}%)")
+            c["description"] = f"Histogram of {col} — {', '.join(parts)}"
+        else:
+            dist = p.get("distribution", {})
+            parts = [f"Top: \"{dist.get('top_value','?')}\" ({dist.get('top_count','?')} rows)"]
+            if missing:
+                parts.append(f"{missing} missing ({missing_pct}%)")
+            c["description"] = f"Bar chart of {col} — {', '.join(parts)}"
+
     return charts

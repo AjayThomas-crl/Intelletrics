@@ -29,6 +29,14 @@ interface UploadData {
   preview: Record<string, string | number>[];
   charts: Chart[];
   profiles: Profile[];
+  summary: string;
+  insights: Insight[];
+}
+interface Insight {
+  title: string;
+  detail: string;
+  category: string;
+  affected_columns: string[];
 }
 interface Profile {
   name: string;
@@ -60,6 +68,7 @@ interface Chart {
   column: string;
   labels: (string | number)[];
   values: number[];
+  description?: string;
 }
 export default function Page() {
   const [uploadLoading, setUploadLoading] = useState(false);
@@ -222,15 +231,61 @@ export default function Page() {
                 </table>
               </CardContent>
             </Card>
+
             {/* Column Charts */}
             {uploadData.charts.length > 0 && (
               <div className="flex flex-wrap gap-3">
                 {uploadData.charts.map((chart, i) => (
-                  <div key={`${chart.column}-${i}`} className="w-full sm:w-[calc(50%-0.375rem)] lg:w-[calc(33.333%-0.5rem)]">
-                    <ChartRenderer chart={chart} profile={profileByColumn[chart.column]} />
+                  <div
+                    key={`${chart.column}-${i}`}
+                    className="w-full sm:w-[calc(50%-0.375rem)] lg:w-[calc(33.333%-0.5rem)]"
+                  >
+                    <ChartRenderer
+                      chart={chart}
+                      profile={profileByColumn[chart.column]}
+                    />
                   </div>
                 ))}
               </div>
+            )}
+            {/* AI Summary / Insights */}
+            {uploadData.insights && uploadData.insights.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base font-semibold">
+                    AI Insights
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-4">
+                  {/* Executive summary as a paragraph */}
+                  {uploadData.summary && (
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {uploadData.summary}
+                    </p>
+                  )}
+                  {/* Individual insights as bullet items */}
+                  <ul className="space-y-3 text-sm">
+                    {uploadData.insights.map((insight, i) => (
+                      <li key={i} className="flex gap-2">
+                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                        <div className="flex flex-col gap-0.5 min-w-0">
+                          <span className="flex items-center gap-2 flex-wrap">
+                            <span className="font-medium text-foreground">
+                              {insight.title}
+                            </span>
+                            <span className="text-[10px] uppercase tracking-wider text-muted-foreground/60 border rounded px-1.5 py-0.5">
+                              {insight.category.replace(/_/g, " ")}
+                            </span>
+                          </span>
+                          <span className="text-muted-foreground">
+                            {insight.detail}
+                          </span>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
             )}
           </div>
         )}
