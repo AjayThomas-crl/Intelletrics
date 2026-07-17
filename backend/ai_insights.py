@@ -152,17 +152,6 @@ _T = TypeVar("_T", bound=BaseModel)
 
 class AIClient(ABC):
     """Abstract interface every provider implements."""
-
-    @abstractmethod
-    async def generate_insights(
-        self,
-        profiles: list[dict],
-        filename: str = "",
-        rows: int = 0,
-        columns: int = 0,
-    ) -> InsightsResult:
-        ...
-
     @abstractmethod
     async def generate_structured(
         self,
@@ -171,6 +160,28 @@ class AIClient(ABC):
         max_tokens: int = 4096,
     ) -> _T:
         ...
+        
+    async def generate_insights(
+        self,
+        profiles,
+        filename="",
+        rows=0,
+        columns=0,
+    ):
+        prompt = build_insights_prompt(
+            profiles,
+            filename,
+            rows,
+            columns,
+        )
+
+        return await self.generate_structured(
+            prompt,
+            InsightsResult,
+        )
+
+
+    
 
 
 # ── Gemini provider ─────────────────────────────────────────────────────────
@@ -188,16 +199,6 @@ class GeminiClient(AIClient):
             raise ValueError("GEMINI_API_KEY not found in backend/.env")
         self._client = genai.Client(api_key=key)
         self.model = model
-
-    async def generate_insights(
-        self,
-        profiles: list[dict],
-        filename: str = "",
-        rows: int = 0,
-        columns: int = 0,
-    ) -> InsightsResult:
-        prompt = build_insights_prompt(profiles, filename, rows, columns)
-        return await self.generate_structured(prompt, InsightsResult)
 
     async def generate_structured(
         self,
@@ -245,16 +246,6 @@ class GroqClient(AIClient):
             raise ValueError("GROQ_API_KEY not found in backend/.env")
         self._client = AsyncGroq(api_key=key)
         self.model = model
-
-    async def generate_insights(
-        self,
-        profiles: list[dict],
-        filename: str = "",
-        rows: int = 0,
-        columns: int = 0,
-    ) -> InsightsResult:
-        prompt = build_insights_prompt(profiles, filename, rows, columns)
-        return await self.generate_structured(prompt, InsightsResult)
 
     async def generate_structured(
         self,

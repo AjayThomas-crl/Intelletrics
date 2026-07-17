@@ -5,9 +5,9 @@ import shutil
 import pandas as pd
 from profiler import profile_dataframe
 from chart_generator import generate_charts, charts_description
-from ai_insights import get_provider_chain, InsightsResult
+from ai_insights import get_provider_chain
 from fastapi.middleware.cors import CORSMiddleware
-
+from ask_on_data import ask_data
 
 def sanitize_for_json(obj):
     """Recursively convert NaN/Inf/numpy scalars to native Python types for JSON compliance."""
@@ -80,26 +80,9 @@ async def upload(file: UploadFile = File(...)):
         "summary": insights_data["summary"],
         "insights": insights_data["insights"],
     }
+class AskRequest(BaseModel):
+    question:str
 
-
-
-class InsightsRequest(BaseModel):
-    profiles: list[dict]
-    filename: str = ""
-    rows: int = 0
-    columns: int = 0
-
-
-class InsightsResponse(BaseModel):
-    insights: str
-
-
-@app.post("/insights", response_model=InsightsResponse)
-async def insights(req: InsightsRequest):
-    result = await ai_client.generate_insights(
-        profiles=req.profiles,
-        filename=req.filename,
-        rows=req.rows,
-        columns=req.columns,
-    )
-    return InsightsResponse(insights=result.summary)
+@app.post("/ask")
+async def ask(request:AskRequest):
+    return await ask_data(request)
