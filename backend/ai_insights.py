@@ -31,6 +31,7 @@ from typing_extensions import TypeVar
 
 DEFAULT_GEMINI_MODEL = "gemini-2.0-flash"
 DEFAULT_GROQ_MODEL = "llama-3.3-70b-versatile"
+DEFAULT_DEEPSEEK_MODEL = "deepseek-chat"
 
 
 def _load_env_var(name: str) -> str | None:
@@ -58,6 +59,10 @@ def _load_gemini_env() -> str | None:
 
 def _load_groq_env() -> str | None:
     return _load_env_var("GROQ_API_KEY")
+
+
+def _load_deepseek_env() -> str | None:
+    return _load_env_var("DEEPSEEK_API_KEY")
 
 
 # ── Shared structured-output schemas ────────────────────────────────────────
@@ -277,6 +282,69 @@ class GroqClient(AIClient):
         return _parse_json_fallback(raw, response_model)
 
 
+# ── DeepSeek provider (OpenAI-compatible via httpx) ─────────────────────────
+
+
+class DeepSeekClient(AIClient):
+    """DeepSeek provider — calls the OpenAI-compatible DeepSeek API via httpx.
+
+    Uses JSON-mode (``response_format={type: "json_object"}``) with
+    client-side schema validation, same pattern as Groq.
+    """
+
+    BASE_URL = "https://api.deepseek.com/chat/completions"
+
+    def __init__(
+        self,
+        api_key: str | None = None,
+        model: str = DEFAULT_DEEPSEEK_MODEL,
+    ):
+        key = api_key or _load_deepseek_env()
+        if not key:
+            raise ValueError("DEEPSEEK_API_KEY not found in backend/.env")
+        self._api_key = key
+        self.model = model
+
+    async def generate_structured(
+        self,
+        prompt: str,
+        response_model: type[_T],
+        max_tokens: int = 4096,
+    ) -> _T:
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                self.BASE_URL,
+                headers={
+                    "Authorization": f"Bearer {self._api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": self.model,
+                    "messages": [
+                        {
+                            "role": "system",
+                            "content": (
+                                "You are a data analyst. Always respond with valid JSON "
+                                f"matching the schema: {response_model.model_json_schema()}"
+                            ),
+                        },
+                        {"role": "user", "content": prompt},
+                    ],
+                    "response_format": {"type": "json_object"},
+                    "max_tokens": max_tokens,
+                    "temperature": 0.3,
+                },
+                timeout=60,
+            )
+            resp.raise_for_status()
+
+        raw = resp.json()["choices"][0]["message"]["content"]
+        if raw is None:
+            raise ValueError("DeepSeek returned no text content")
+
+        return _parse_json_fallback(raw, response_model)
+
+
 # ── JSON fallback parser (shared) ──────────────────────────────────────────
 
 def _parse_json_fallback(raw: str, model: type[_T]) -> _T:
@@ -311,14 +379,60 @@ class _ProviderChain:
         if groq_key:
             self._providers.append(GroqClient(api_key=groq_key))
 
+        # 3 — DeepSeek (OpenAI-compatible)
+        deepseek_key = _load_deepseek_env()
+        if deepseek_key:
+            self._providers.append(DeepSeekClient(api_key=deepseek_key))
+
         if not self._providers:
             raise RuntimeError(
-                "No AI provider configured. Set GEMINI_API_KEY and/or "
-                "GROQ_API_KEY in backend/.env"
+                "No AI provider configured. Set GEMINI_API_KEY, "
+                "GROQ_API_KEY, and/or DEEPSEEK_API_KEY in backend/.env"
             )
 
     def list_providers(self) -> list[str]:
         return [type(p).__name__ for p in self._providers]
+
+    async def generate_structured(
+        self,
+        prompt: str,
+        response_model: type[_T],
+        max_tokens: int = 4096,
+    ) -> _T:
+        """Try each provider in order; skip to next on 429 / auth errors."""
+        last_error: Exception | None = None
+        for provider in self._providers:
+            try:
+                return await provider.generate_structured(
+                    prompt=prompt,
+                    response_model=response_model,
+                    max_tokens=max_tokens,
+                )
+            except httpx.HTTPStatusError as e:
+                last_error = e
+                if e.response.status_code == 429:
+                    continue
+                raise
+            except gemini_errors.ClientError as e:
+                last_error = e
+                if e.code == 429:
+                    continue
+                raise
+            except GroqAPIError as e:
+                last_error = e
+                if e.status_code in (429, 413):
+                    continue
+                raise
+            except Exception as e:
+                last_error = e
+                if provider is self._providers[-1]:
+                    raise
+                continue
+
+        raise RuntimeError(
+            "All AI providers exhausted their quotas. "
+            "Check GEMINI_API_KEY and GROQ_API_KEY limits, or try again later."
+        ) from last_error
 
     async def generate_insights(
         self,
@@ -348,7 +462,7 @@ class _ProviderChain:
                 raise
             except GroqAPIError as e:
                 last_error = e
-                if e.status_code == 429:
+                if e.status_code in (429, 413):
                     continue
                 raise
             except Exception as e:

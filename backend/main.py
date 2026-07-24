@@ -1,4 +1,5 @@
 import math
+import uuid
 from fastapi import FastAPI, UploadFile, File
 from pydantic import BaseModel
 import shutil
@@ -7,7 +8,8 @@ from profiler import profile_dataframe
 from chart_generator import generate_charts, charts_description
 from ai_insights import get_provider_chain
 from fastapi.middleware.cors import CORSMiddleware
-from ask_on_data import ask_data
+from ask_on_data import ask_data, AskResponse
+from dataset_store import datasets
 
 def sanitize_for_json(obj):
     """Recursively convert NaN/Inf/numpy scalars to native Python types for JSON compliance."""
@@ -68,7 +70,11 @@ async def upload(file: UploadFile = File(...)):
     # insights_raw is guaranteed non-None (sanitize_for_json returns original type for dicts)
     insights_data: dict = insights_raw  # type: ignore[assignment]
 
+    dataset_id = str(uuid.uuid4())
+    datasets[dataset_id] = df
+
     return {
+        "dataset_id": dataset_id,
         "filename": file.filename,
         "content_type": file.content_type,
         "rows": rows,
@@ -81,8 +87,9 @@ async def upload(file: UploadFile = File(...)):
         "insights": insights_data["insights"],
     }
 class AskRequest(BaseModel):
-    question:str
+    dataset_id: str
+    question: str
 
 @app.post("/ask")
-async def ask(request:AskRequest):
+async def ask(request:AskRequest) -> AskResponse:
     return await ask_data(request)
