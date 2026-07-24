@@ -20,6 +20,7 @@ import { useRef, useState, useMemo } from "react";
 import { ChartRenderer, type BackendProfile } from "@/components/charts/chart-renderer";
 import { ChatPanel } from "@/components/chat/chat-panel";
 import { Loader2Icon } from "lucide-react";
+import { apiFetch } from "@/lib/api";
 
 interface UploadData {
   dataset_id: string;
@@ -96,10 +97,14 @@ export default function Page() {
     setUploadLoading(true);
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/upload", {
+      const response = await apiFetch("/upload", {
         method: "POST",
         body: formData,
       });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ detail: "Upload failed" }));
+        throw new Error(error.detail || `Upload failed (${response.status})`);
+      }
       const data: UploadData = await response.json();
       setUploadData(data);
     } catch (err) {

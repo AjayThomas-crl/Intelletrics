@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { Loader2Icon, SendIcon, BotIcon, UserIcon } from "lucide-react";
 import { useRef, useState, useCallback, useEffect } from "react";
+import { apiFetch } from "@/lib/api";
 
 export interface ChatMessage {
   id: string;
@@ -61,7 +62,7 @@ export function ChatPanel({ datasetId, className }: ChatPanelProps) {
     setLoading(true);
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/ask", {
+      const res = await apiFetch("/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ dataset_id: datasetId, question: text }),

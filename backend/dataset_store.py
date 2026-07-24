@@ -1,1 +1,1 @@
-datasets={}
+datasets: dict[str, dict] = {}

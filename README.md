@@ -169,6 +169,10 @@ npm install
 ```env
 GEMINI_API_KEY=your_gemini_api_key_here
 GROQ_API_KEY=your_groq_api_key_here       # optional fallback
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_PUBLISHABLE_KEY=your_publishable_or_anon_key
+SUPABASE_STORAGE_BUCKET=datasets
+FRONTEND_URL=http://localhost:3000
 ```
 
 #### `frontend/.env.local`
@@ -176,9 +180,17 @@ GROQ_API_KEY=your_groq_api_key_here       # optional fallback
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your_anon_key_here
+NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
 
-### 3. Run
+### 3.1 Configure persistent storage
+
+Run `backend/schema.sql` once in the Supabase SQL editor. It creates the `datasets`
+table, enables row-level security, and creates the private `datasets` Storage bucket.
+FastAPI uses the authenticated user's JWT for database and Storage access. No service-role
+key is required or should be added to this project.
+
+### 4. Run
 
 ```bash
 # Terminal 1 — Backend (http://localhost:8000)
