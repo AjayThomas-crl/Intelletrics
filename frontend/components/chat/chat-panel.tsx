@@ -4,7 +4,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { Loader2Icon, SendIcon, BotIcon, UserIcon } from "lucide-react";
 import { useRef, useState, useCallback, useEffect } from "react";
@@ -14,6 +13,78 @@ export interface ChatMessage {
   id: string;
   role: "user" | "assistant";
   content: string;
+  result?: unknown;
+}
+
+function formatValue(value: unknown): string {
+  if (value === null || value === undefined || value === "") return "—";
+  if (typeof value === "number") return value.toLocaleString();
+  return String(value);
+}
+
+function QueryResult({ result }: { result: unknown }) {
+  if (Array.isArray(result)) {
+    if (result.length === 0) {
+      return <p className="text-xs text-muted-foreground">No matching rows.</p>;
+    }
+
+    const rows = result.filter(
+      (row): row is Record<string, unknown> =>
+        typeof row === "object" && row !== null && !Array.isArray(row)
+    );
+    if (rows.length !== result.length) {
+      return (
+        <p className="text-sm font-medium text-foreground">
+          {result.map(formatValue).join(", ")}
+        </p>
+      );
+    }
+
+    const columns = Object.keys(rows[0]);
+    return (
+      <div className="mt-2 max-w-full overflow-x-auto rounded-md border bg-background">
+        <table className="w-full min-w-max text-xs">
+          <thead className="border-b bg-muted/50">
+            <tr>
+              {columns.map((column) => (
+                <th key={column} className="whitespace-nowrap px-3 py-2 text-left font-medium">
+                  {column.replace(/_/g, " ")}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, rowIndex) => (
+              <tr key={rowIndex} className="border-b last:border-0">
+                {columns.map((column) => (
+                  <td key={column} className="whitespace-nowrap px-3 py-2 text-muted-foreground">
+                    {formatValue(row[column])}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+
+  if (typeof result === "object" && result !== null) {
+    return (
+      <div className="mt-2 grid grid-cols-2 gap-2 rounded-md border bg-background p-3 text-xs">
+        {Object.entries(result).map(([key, value]) => (
+          <div key={key} className="min-w-0">
+            <p className="text-muted-foreground">{key.replace(/_/g, " ")}</p>
+            <p className="truncate font-medium text-foreground" title={formatValue(value)}>
+              {formatValue(value)}
+            </p>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return <p className="mt-2 text-sm font-semibold text-foreground">{formatValue(result)}</p>;
 }
 
 interface ChatPanelProps {
@@ -26,8 +97,9 @@ export function ChatPanel({ datasetId, className }: ChatPanelProps) {
     {
       id: "welcome",
       role: "assistant",
-      content:
-        "Upload a dataset to get started. Ask questions about your data — trends, outliers, summaries, or specific columns — and I'll analyse them for you.",
+      content: datasetId
+        ? "Dataset loaded! Ask me anything about your data."
+        : "Upload a dataset to get started. Ask questions about your data — trends, outliers, summaries, or specific columns — and I'll analyse them for you.",
     },
   ]);
   const [input, setInput] = useState("");
@@ -78,6 +150,7 @@ export function ChatPanel({ datasetId, className }: ChatPanelProps) {
         id: crypto.randomUUID(),
         role: "assistant",
         content: data.answer,
+        result: data.result,
       };
       setMessages((prev) => [...prev, assistantMsg]);
     } catch (err) {
@@ -97,23 +170,10 @@ export function ChatPanel({ datasetId, className }: ChatPanelProps) {
     }
   }, [input, datasetId, loading]);
 
-  // Clear messages when dataset changes
-  useEffect(() => {
-    if (datasetId) {
-      setMessages([
-        {
-          id: "context-ready",
-          role: "assistant",
-          content: "Dataset loaded! Ask me anything about your data.",
-        },
-      ]);
-    }
-  }, [datasetId]);
-
   return (
     <div
       className={cn(
-        "flex h-full flex-col bg-background border-l",
+        "flex h-full min-h-0 flex-col overflow-hidden bg-background border-l",
         className
       )}
     >
@@ -124,7 +184,7 @@ export function ChatPanel({ datasetId, className }: ChatPanelProps) {
       </div>
 
       {/* Messages */}
-      <ScrollArea ref={scrollRef} className="flex-1">
+      <ScrollArea ref={scrollRef} className="min-h-0 flex-1">
         <div className="flex flex-col gap-3 p-4">
           {messages.map((msg) => (
             <div
@@ -151,13 +211,14 @@ export function ChatPanel({ datasetId, className }: ChatPanelProps) {
               </Avatar>
               <div
                 className={cn(
-                  "max-w-[80%] rounded-xl px-3.5 py-2 text-sm leading-relaxed whitespace-pre-wrap",
+                  "min-w-0 max-w-[90%] rounded-xl px-3.5 py-2 text-sm leading-relaxed whitespace-pre-wrap",
                   msg.role === "user"
                     ? "bg-primary text-primary-foreground rounded-tr-sm"
                     : "bg-muted text-foreground rounded-tl-sm"
                 )}
               >
-                {msg.content}
+                <div>{msg.content}</div>
+                {msg.result !== undefined && <QueryResult result={msg.result} />}
               </div>
             </div>
           ))}
