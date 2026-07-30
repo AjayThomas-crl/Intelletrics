@@ -16,11 +16,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useRef, useState, useMemo } from "react";
+import { useRef, useState } from "react";
 import { ChartRenderer, type BackendProfile } from "@/components/charts/chart-renderer";
 import { ChatPanel } from "@/components/chat/chat-panel";
-import { Loader2Icon } from "lucide-react";
 import { apiFetch } from "@/lib/api";
+import { Upload } from "lucide-react";
 
 interface UploadData {
   dataset_id: string;
@@ -79,14 +79,12 @@ export default function Page() {
 
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const profileByColumn = useMemo(() => {
-    if (!uploadData?.profiles) return {};
-    const map: Record<string, BackendProfile> = {};
+  const profileByColumn: Record<string, BackendProfile> = {};
+  if (uploadData?.profiles) {
     for (const p of uploadData.profiles) {
-      map[p.name] = p;
+      profileByColumn[p.name] = p;
     }
-    return map;
-  }, [uploadData?.profiles]);
+  }
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -115,7 +113,7 @@ export default function Page() {
   };
 
   return (
-    <div className="flex flex-col flex-1 h-full">
+    <div className="flex min-h-0 flex-1 flex-col h-full">
       <header className="flex h-14 shrink-0 items-center gap-2 px-4 border-b">
         <SidebarTrigger />
         <Separator orientation="vertical" className="my-5 h-4" />
@@ -133,9 +131,9 @@ export default function Page() {
       </header>
 
       {/* Two-column layout: data content | chat */}
-      <div className="flex flex-1 min-h-0">
+      <div className="flex min-h-0 flex-1 overflow-hidden">
         {/* Left: data content */}
-        <div className="flex-1 overflow-y-auto p-4 pt-3">
+        <div className="min-h-0 flex-1 overflow-y-auto p-4 pt-3">
           {/* Hidden file input — always in DOM */}
           <input
             type="file"
@@ -154,16 +152,15 @@ export default function Page() {
                 </div>
               ) : (
                 <div
+                  id="upload"
                   onClick={() => inputRef.current?.click()}
-                  className="flex w-full cursor-pointer items-center justify-center rounded-xl border-2 border-dashed bg-muted/50 hover:bg-muted/70 transition-colors py-16"
+                  className="dashboard-empty-state flex w-full cursor-pointer items-center justify-center rounded-xl border-2 border-dashed bg-muted/50 hover:bg-muted/70 transition-colors py-16"
                 >
                   <div className="text-center">
-                    <p className="text-lg font-medium">
-                      Upload your .csv/.xlsx files
-                    </p>
-                    <p className="text-muted-foreground">
-                      Drag & drop or click to browse
-                    </p>
+                    <Upload className="mx-auto mb-3 size-8 text-primary" />
+                    <p className="text-lg font-medium">Upload a dataset to begin</p>
+                    <p className="mt-1 text-sm text-muted-foreground">Drop a CSV or Excel file here, or click to browse</p>
+                    <p className="mt-3 text-xs text-muted-foreground/70">Your preview, charts, profile, and AI insights will appear here.</p>
                   </div>
                 </div>
               )}
@@ -204,7 +201,7 @@ export default function Page() {
               </div>
 
               {/* Data Preview Table */}
-              <h1 className="text-base font-semibold">Preview (first 10 rows)</h1>
+              <h1 id="preview" className="text-base font-semibold">Preview (first 10 rows)</h1>
               <Card className="flex flex-col max-h-[400px]">
                 <CardContent className="p-0 flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
                   <table className="w-full text-sm table-fixed border-collapse">
@@ -244,7 +241,7 @@ export default function Page() {
 
               {/* Column Charts */}
               {uploadData.charts.length > 0 && (
-                <div className="flex flex-wrap gap-3">
+                <div id="profiles" className="flex flex-wrap gap-3">
                   {uploadData.charts.map((chart, i) => (
                     <div
                       key={`${chart.column}-${i}`}
@@ -260,7 +257,7 @@ export default function Page() {
               )}
               {/* AI Summary / Insights */}
               {uploadData.insights && uploadData.insights.length > 0 && (
-                <Card>
+                <Card id="insights">
                   <CardHeader>
                     <CardTitle className="text-base font-semibold">
                       AI Insights
@@ -301,8 +298,8 @@ export default function Page() {
 
         {/* Right: Chat Panel */}
         {uploadData && (
-          <div className="w-[400px] shrink-0">
-            <ChatPanel datasetId={uploadData.dataset_id} />
+          <div className="h-full min-h-0 w-[400px] shrink-0 overflow-hidden">
+            <ChatPanel key={uploadData.dataset_id} datasetId={uploadData.dataset_id} />
           </div>
         )}
       </div>

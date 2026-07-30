@@ -19,25 +19,44 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
+  const [fullName, setFullName] = useState<string>("");
   const [email, SetEmail] = useState<string>("");
   const [password, SetPassword] = useState<string>("");
+  const [errorMessage, setErrorMessage] = useState<string>("");
   const supabase = createClient();
   const router = useRouter();
+  const handleGoogleSignup = async (): Promise<void> => {
+    setErrorMessage("");
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+      },
+    });
+
+    if (error) setErrorMessage(error.message);
+  };
   const handleSignup = async (
     e: React.FormEvent<HTMLFormElement>,
   ): Promise<void> => {
     e.preventDefault();
+    setErrorMessage("");
 
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: {
+          full_name: fullName,
+        },
+      },
     });
 
     if (error) {
       if (error.message.toLowerCase().includes("already")) {
-        console.error("User already registered. Please sign in.");
+        setErrorMessage("User already registered. Please sign in.");
       } else {
-        console.error(error.message);
+        setErrorMessage(error.message);
       }
       return;
     }
@@ -63,7 +82,13 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
           <FieldGroup>
             <Field>
               <FieldLabel htmlFor="name">Full Name</FieldLabel>
-              <Input id="name" type="text" placeholder="John Doe" required />
+              <Input
+                id="name"
+                type="text"
+                placeholder="John Doe"
+                required
+                onChange={(e) => setFullName(e.target.value)}
+              />
             </Field>
             <Field>
               <FieldLabel htmlFor="email">Email</FieldLabel>
@@ -104,8 +129,9 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
             </Field>
             <FieldGroup>
               <Field>
+                {errorMessage && <p className="text-sm text-destructive">{errorMessage}</p>}
                 <Button type="submit">Create Account</Button>
-                <Button variant="outline" type="button">
+                <Button variant="outline" type="button" onClick={handleGoogleSignup}>
                   Sign up with Google
                 </Button>
                 <FieldDescription className="px-6 text-center">
