@@ -58,7 +58,7 @@ def parse_upload(filename: str, content: bytes) -> pd.DataFrame:
     raise HTTPException(status_code=415, detail="Only .csv, .xlsx, and .xls files are supported")
 
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 def health_check():
     return {"status": "ok"}
 

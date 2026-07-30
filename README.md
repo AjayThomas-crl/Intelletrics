@@ -196,7 +196,7 @@ key is required or should be added to this project.
 # Terminal 1 — Backend (http://localhost:8000)
 cd backend
 source .venv/bin/activate
-uvicorn main:app --reload
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
 # Terminal 2 — Frontend (http://localhost:3000)
 cd frontend
