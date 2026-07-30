@@ -30,7 +30,7 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || window.location.origin}/auth/callback?next=/dashboard`,
       },
     });
 
@@ -49,6 +49,7 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
         data: {
           full_name: fullName,
         },
+        emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || window.location.origin}/auth/callback?next=/dashboard`,
       },
     });
 
