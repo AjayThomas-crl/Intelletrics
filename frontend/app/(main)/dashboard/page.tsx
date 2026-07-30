@@ -20,6 +20,7 @@ import { useRef, useState } from "react";
 import { ChartRenderer, type BackendProfile } from "@/components/charts/chart-renderer";
 import { ChatPanel } from "@/components/chat/chat-panel";
 import { apiFetch } from "@/lib/api";
+import { Upload } from "lucide-react";
 
 interface UploadData {
   dataset_id: string;
@@ -151,16 +152,15 @@ export default function Page() {
                 </div>
               ) : (
                 <div
+                  id="upload"
                   onClick={() => inputRef.current?.click()}
-                  className="flex w-full cursor-pointer items-center justify-center rounded-xl border-2 border-dashed bg-muted/50 hover:bg-muted/70 transition-colors py-16"
+                  className="dashboard-empty-state flex w-full cursor-pointer items-center justify-center rounded-xl border-2 border-dashed bg-muted/50 hover:bg-muted/70 transition-colors py-16"
                 >
                   <div className="text-center">
-                    <p className="text-lg font-medium">
-                      Upload your .csv/.xlsx files
-                    </p>
-                    <p className="text-muted-foreground">
-                      Drag & drop or click to browse
-                    </p>
+                    <Upload className="mx-auto mb-3 size-8 text-primary" />
+                    <p className="text-lg font-medium">Upload a dataset to begin</p>
+                    <p className="mt-1 text-sm text-muted-foreground">Drop a CSV or Excel file here, or click to browse</p>
+                    <p className="mt-3 text-xs text-muted-foreground/70">Your preview, charts, profile, and AI insights will appear here.</p>
                   </div>
                 </div>
               )}
@@ -201,7 +201,7 @@ export default function Page() {
               </div>
 
               {/* Data Preview Table */}
-              <h1 className="text-base font-semibold">Preview (first 10 rows)</h1>
+              <h1 id="preview" className="text-base font-semibold">Preview (first 10 rows)</h1>
               <Card className="flex flex-col max-h-[400px]">
                 <CardContent className="p-0 flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
                   <table className="w-full text-sm table-fixed border-collapse">
@@ -241,7 +241,7 @@ export default function Page() {
 
               {/* Column Charts */}
               {uploadData.charts.length > 0 && (
-                <div className="flex flex-wrap gap-3">
+                <div id="profiles" className="flex flex-wrap gap-3">
                   {uploadData.charts.map((chart, i) => (
                     <div
                       key={`${chart.column}-${i}`}
@@ -257,7 +257,7 @@ export default function Page() {
               )}
               {/* AI Summary / Insights */}
               {uploadData.insights && uploadData.insights.length > 0 && (
-                <Card>
+                <Card id="insights">
                   <CardHeader>
                     <CardTitle className="text-base font-semibold">
                       AI Insights

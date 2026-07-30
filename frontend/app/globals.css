@@ -170,12 +170,38 @@
   * {
     @apply border-border outline-ring/50;
   }
+  button, a, [role="button"] {
+    cursor: pointer;
+  }
+  button:disabled, [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
   body {
     @apply bg-background text-foreground;
   }
   html {
     @apply font-sans;
   }
+}
+
+@keyframes intelletrics-fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes intelletrics-pulse-border {
+  0%, 100% { border-color: var(--border); }
+  50% { border-color: color-mix(in oklab, var(--primary) 55%, var(--border)); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .app-landing .hero-copy, .app-landing .hero-art, .app-landing .intro-section, .app-landing .feature-card, .app-landing .dark-band, .app-landing .final-cta { animation: intelletrics-fade-up .55s ease both; }
+  .app-landing .hero-art { animation-delay: .08s; }
+  .app-landing .feature-card:nth-child(2) { animation-delay: .08s; }
+  .app-landing .feature-card:nth-child(3) { animation-delay: .16s; }
+  .dashboard-empty-state { animation: intelletrics-pulse-border 2.8s ease-in-out infinite; }
+  .landing-button, .primary-button, .nav-cta, button { transition: transform .18s ease, opacity .18s ease, background-color .18s ease; }
+  .landing-button:hover, .primary-button:hover, .nav-cta:hover, button:not(:disabled):hover { transform: translateY(-1px); }
 }
 
 /* Keep the marketing page aligned with the app's dark dashboard theme. */

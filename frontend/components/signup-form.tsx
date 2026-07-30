@@ -19,6 +19,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
+  const [fullName, setFullName] = useState<string>("");
   const [email, SetEmail] = useState<string>("");
   const [password, SetPassword] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string>("");
@@ -44,6 +45,11 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: {
+          full_name: fullName,
+        },
+      },
     });
 
     if (error) {
@@ -76,7 +82,13 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
           <FieldGroup>
             <Field>
               <FieldLabel htmlFor="name">Full Name</FieldLabel>
-              <Input id="name" type="text" placeholder="John Doe" required />
+              <Input
+                id="name"
+                type="text"
+                placeholder="John Doe"
+                required
+                onChange={(e) => setFullName(e.target.value)}
+              />
             </Field>
             <Field>
               <FieldLabel htmlFor="email">Email</FieldLabel>
