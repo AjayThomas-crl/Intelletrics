@@ -1,7 +1,16 @@
 import { type NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
 export async function proxy(request: NextRequest) {
+  // Supabase can return an auth code to the configured Site URL. If that URL
+  // is the root, forward the one-time code to our session exchange route.
+  if (request.nextUrl.pathname === "/" && request.nextUrl.searchParams.has("code")) {
+    const callbackUrl = request.nextUrl.clone();
+    callbackUrl.pathname = "/auth/callback";
+    return NextResponse.redirect(callbackUrl);
+  }
+
   return await updateSession(request);
 }
 

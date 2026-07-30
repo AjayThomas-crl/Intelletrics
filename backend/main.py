@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from ai_insights import get_provider_chain
 from auth import UserContext, get_user_context
 from chart_generator import charts_description, generate_charts
-from config import FRONTEND_URL, MAX_COLUMNS, MAX_ROWS, MAX_UPLOAD_BYTES
+from config import FRONTEND_URLS, MAX_COLUMNS, MAX_ROWS, MAX_UPLOAD_BYTES
 from persistence import save_dataset
 from profiler import profile_dataframe
 from dataset_store import datasets
@@ -22,7 +22,7 @@ app = FastAPI(title="Intelletrics API", version="1.0")
 logger = logging.getLogger("intelletrics.api")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[FRONTEND_URL],
+    allow_origins=FRONTEND_URLS,
     allow_credentials=True,
     allow_methods=["GET", "POST"],
     allow_headers=["Authorization", "Content-Type"],
@@ -128,7 +128,7 @@ async def upload(
         insights = insights_data["insights"]
     except Exception:
         # Upload and deterministic analysis must still succeed when AI is unavailable.
-        pass
+        logger.exception("AI insight generation failed for dataset %s", dataset_id)
 
     return {
         "dataset_id": dataset_id,

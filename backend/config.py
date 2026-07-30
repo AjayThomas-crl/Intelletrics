@@ -29,6 +29,11 @@ SUPABASE_PUBLISHABLE_KEY = os.getenv(
 )
 SUPABASE_STORAGE_BUCKET = os.getenv("SUPABASE_STORAGE_BUCKET", "datasets")
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
+FRONTEND_URLS = [
+    origin.strip().rstrip("/")
+    for origin in FRONTEND_URL.split(",")
+    if origin.strip()
+]
 MAX_UPLOAD_BYTES = int(os.getenv("MAX_UPLOAD_BYTES", str(25 * 1024 * 1024)))
 MAX_ROWS = int(os.getenv("MAX_ROWS", "250000"))
 MAX_COLUMNS = int(os.getenv("MAX_COLUMNS", "200"))

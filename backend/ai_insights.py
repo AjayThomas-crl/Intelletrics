@@ -15,6 +15,7 @@ Add a new provider = implement ``AIClient`` + register in ``_ProviderChain``.
 from __future__ import annotations
 
 import json
+import os
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any
@@ -35,7 +36,13 @@ DEFAULT_DEEPSEEK_MODEL = "deepseek-chat"
 
 
 def _load_env_var(name: str) -> str | None:
-    """Load *name* from backend/.env (inline comment‑safe)."""
+    """Load *name* from the process environment or local backend/.env."""
+    # Render and other hosts inject secrets as process environment variables.
+    # Local development can still use backend/.env as a fallback.
+    process_value = os.getenv(name)
+    if process_value:
+        return process_value.strip()
+
     env_path = Path(__file__).resolve().parent / ".env"
     if not env_path.exists():
         return None
