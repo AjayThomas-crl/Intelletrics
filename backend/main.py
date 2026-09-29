@@ -1,20 +1,20 @@
 import math
-import io
 import logging
 import uuid
 from typing import Annotated
 
-import pandas as pd
 from fastapi import Depends, FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
 from ai_insights import get_provider_chain
 from auth import UserContext, get_user_context
 from chart_generator import charts_description, generate_charts
-from config import FRONTEND_URLS, MAX_COLUMNS, MAX_ROWS, MAX_UPLOAD_BYTES
+from config import FRONTEND_URLS, MAX_UPLOAD_BYTES
 from persistence import save_dataset
 from profiler import profile_dataframe
 from dataset_store import datasets
+from data_io import parse_dataset
+from health import readiness
 from ask_on_data import ask_data, AskRequest, AskResponse
 
 
@@ -46,21 +46,18 @@ def sanitize_for_json(obj):
     return obj
 
 
-def parse_upload(filename: str, content: bytes) -> pd.DataFrame:
-    suffix = filename.lower().rsplit(".", 1)[-1] if "." in filename else ""
-    try:
-        if suffix == "csv":
-            return pd.read_csv(io.BytesIO(content))
-        if suffix in {"xlsx", "xls"}:
-            return pd.read_excel(io.BytesIO(content))
-    except (UnicodeDecodeError, ValueError, OSError, ImportError) as exc:
-        raise HTTPException(status_code=400, detail=f"Could not parse dataset: {exc}") from exc
-    raise HTTPException(status_code=415, detail="Only .csv, .xlsx, and .xls files are supported")
+# Compatibility for callers using the original parser name.
+parse_upload = parse_dataset
 
 
 @app.api_route("/", methods=["GET", "HEAD"])
 def health_check():
     return {"status": "ok"}
+
+
+@app.get("/health/ready")
+async def health_ready():
+    return await readiness()
 
 
 @app.post("/upload")
@@ -79,19 +76,6 @@ async def upload(
 
     df = parse_upload(filename, content)
     rows, cols = df.shape
-    if rows > MAX_ROWS:
-        raise HTTPException(status_code=413, detail=f"Dataset exceeds the {MAX_ROWS:,} row limit")
-    if cols > MAX_COLUMNS:
-        raise HTTPException(status_code=413, detail=f"Dataset exceeds the {MAX_COLUMNS} column limit")
-    if rows == 0 or cols == 0:
-        raise HTTPException(status_code=400, detail="The dataset must contain at least one row and one column")
-
-    # Normalize column names once so preview/profile/chart keys are stable.
-    df.columns = [str(column).strip() or f"column_{index + 1}" for index, column in enumerate(df.columns)]
-    if df.columns.duplicated().any():
-        raise HTTPException(status_code=400, detail="Column names must be unique")
-
-    df = df.where(pd.notnull(df), None)
     column_names = list(df.columns)
     preview = sanitize_for_json(df.head(10).to_dict(orient="records"))
     profiles = sanitize_for_json(profile_dataframe(df))

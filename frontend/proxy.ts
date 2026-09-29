@@ -3,6 +3,11 @@ import { NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
 export async function proxy(request: NextRequest) {
+  // Scheduled database checks have no user session; the route handles its own auth.
+  if (request.nextUrl.pathname === "/api/health") {
+    return NextResponse.next();
+  }
+
   // Supabase can return an auth code to the configured Site URL. If that URL
   // is the root, forward the one-time code to our session exchange route.
   if (request.nextUrl.pathname === "/" && request.nextUrl.searchParams.has("code")) {

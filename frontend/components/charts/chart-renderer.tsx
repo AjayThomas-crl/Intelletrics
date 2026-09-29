@@ -104,16 +104,7 @@ function BarChartView({ chart }: { chart: BackendChart }) {
   );
 }
 
-function fmtStat(val: number | undefined): string {
-  if (val === undefined || val === null) return "—";
-  return Math.abs(val) >= 1000
-    ? val.toLocaleString(undefined, { maximumFractionDigits: 1 })
-    : Number.isInteger(val)
-      ? val.toString()
-      : val.toFixed(2);
-}
-
-function HistogramView({ chart, profile }: { chart: BackendChart; profile?: BackendProfile }) {
+function HistogramView({ chart }: { chart: BackendChart; profile?: BackendProfile }) {
   const { data, config } = adaptChart(chart, CHART_COLORS[1]);
 
   return (

@@ -1,4 +1,5 @@
 import os
+import shlex
 from pathlib import Path
 
 
@@ -13,7 +14,8 @@ def _load_local_env() -> None:
             continue
         name, value = line.split("=", 1)
         name = name.strip()
-        value = value.strip().strip('"').strip("'")
+        parts = shlex.split(value, comments=True)
+        value = " ".join(parts)
         # Explicit process environment variables always win over .env values.
         os.environ.setdefault(name, value)
 

@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Image from "next/image"
 import { createClient } from "@/lib/supabase/client"
 
 import { NavMain } from "@/components/nav-main"
@@ -20,7 +21,7 @@ const data = {
   teams: [
     {
       name: "Intelletrics",
-      logo: <img src="/icon.svg" alt="Intelletrics" className="size-8 rounded-lg" />,
+      logo: <Image src="/icon.svg" alt="Intelletrics" width={32} height={32} className="size-8 rounded-lg" />,
       plan: "Open source",
     },
   ],

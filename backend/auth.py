@@ -30,7 +30,7 @@ def get_user_client(token: str) -> Client:
     )
 
 
-async def get_user_context(
+def get_user_context(
     credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer)],
 ) -> UserContext:
     if credentials is None or credentials.scheme.lower() != "bearer":

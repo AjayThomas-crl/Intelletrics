@@ -3,9 +3,9 @@ import "./globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 export const metadata: Metadata = {
-  title: "Intelletrics — AI-Powered Data Analytics",
+  title: "Intelletrics — The answer’s in your spreadsheet",
   description:
-    "Upload CSV or Excel files for instant statistical profiling, interactive charts, and AI-generated insights. No code required.",
+    "Explore CSV and Excel files with charts, statistics, and answers grounded in your data. No code or SQL needed.",
   icons: {
     icon: "/icon.svg",
   },

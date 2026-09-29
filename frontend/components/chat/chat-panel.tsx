@@ -137,12 +137,15 @@ export function ChatPanel({ datasetId, className }: ChatPanelProps) {
       const res = await apiFetch("/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ dataset_id: datasetId, question: text }),
+        body: JSON.stringify({
+          dataset_id: datasetId, question: text,
+          previous_questions: messages.filter((message) => message.role === "user").slice(-2).map((message) => message.content.slice(0, 500)),
+        }),
       });
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({ detail: "Request failed" }));
-        throw new Error(err.detail || `HTTP ${res.status}`);
+        throw new Error(typeof err.detail === "string" ? err.detail : "Please enter a question of 1–2,000 characters.");
       }
 
       const data = await res.json();
@@ -150,7 +153,7 @@ export function ChatPanel({ datasetId, className }: ChatPanelProps) {
         id: crypto.randomUUID(),
         role: "assistant",
         content: data.answer,
-        result: data.result,
+        result: data.operation === "clarification" ? undefined : data.result,
       };
       setMessages((prev) => [...prev, assistantMsg]);
     } catch (err) {
@@ -168,7 +171,7 @@ export function ChatPanel({ datasetId, className }: ChatPanelProps) {
       // Re-focus input after send
       inputRef.current?.focus();
     }
-  }, [input, datasetId, loading]);
+  }, [input, datasetId, loading, messages]);
 
   return (
     <div
@@ -247,6 +250,8 @@ export function ChatPanel({ datasetId, className }: ChatPanelProps) {
                 ? "Ask a question about your data..."
                 : "Upload a dataset first..."
             }
+            maxLength={2000}
+            aria-label="Question about your dataset"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
@@ -260,6 +265,7 @@ export function ChatPanel({ datasetId, className }: ChatPanelProps) {
           />
           <Button
             size="icon"
+            aria-label="Send question"
             onClick={handleSend}
             disabled={!input.trim() || !datasetId || loading}
             className="shrink-0"

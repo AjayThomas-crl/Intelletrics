@@ -1,32 +1,69 @@
 import Link from "next/link";
-import { ArrowDownRight, ArrowRight, ArrowUpRight, BarChart3, Check, ChevronDown, Command, Database, FileSpreadsheet, Layers3, Menu, MessageCircle, Search, Upload } from "lucide-react";
+import Image from "next/image";
+import { ArrowDown, ArrowRight, ArrowUpRight } from "lucide-react";
+import { DatasetDemo } from "@/components/landing/dataset-demo";
+import styles from "./landing.module.css";
 
-const features = [
-  { number: "01", icon: Database, title: "Your data, finally in one place", text: "Bring every spreadsheet and dataset into a workspace that stays organized and ready for questions.", color: "lavender" },
-  { number: "02", icon: BarChart3, title: "See the signal in seconds", text: "Intelletrics profiles your data and turns raw columns into clear, interactive visualizations.", color: "mint" },
-  { number: "03", icon: MessageCircle, title: "Answers, not just dashboards", text: "Ask questions in plain English and get summaries, anomalies, and recommendations.", color: "peach" },
+const workflow = [
+  { number: "01", title: "Bring the spreadsheet.", text: "Upload a CSV or Excel file. Your columns, rows, and a preview are ready to inspect in one workspace.", note: ".CSV / .XLSX / .XLS" },
+  { number: "02", title: "Get your bearings.", text: "See distributions, summary statistics, and missing values before you start drawing conclusions.", note: "PROFILE / CHARTS / DATA QUALITY" },
+  { number: "03", title: "Ask a better question.", text: "Compare regions. Find a trend. Calculate a percentage. Ask in plain language and get the computed results alongside the source columns.", note: "FILTER / COMPARE / EXPLORE" },
+];
+const faqs = [
+  { question: "What can I ask about my data?", answer: "Ask for totals, averages, filtered records, group comparisons, rankings, date trends, missing values, and statistical relationships. Be specific about columns and time periods. If a question needs information that isn’t in your file, Intelletrics will ask for clarification." },
+  { question: "What files can I upload?", answer: "CSV and Excel files up to 25 MB, with up to 250,000 rows and 200 columns. Use a single header row and consistent formats. For Excel workbooks, the first worksheet is analyzed." },
+  { question: "Where do the answers come from?", answer: "AI translates your question into a read-only query. The calculation runs on your uploaded dataset, and the resulting values are shown directly. Column names, types, and a small number of sample text values may be sent to the AI provider to help it understand your question." },
+  { question: "Is this an open-source project?", answer: "Yes. Intelletrics is built by Ajay Thomas and released under the MIT license. You can inspect the code, contribute, or run it yourself." },
 ];
 
-function ProductPreview() {
-  return <div className="preview-window" aria-label="Intelletrics dashboard preview with demo data">
-    <div className="preview-topbar"><div className="window-dots"><i /><i /><i /></div><span>Intelletrics / Dashboard</span><span className="preview-status"><span /> Demo data</span></div>
-    <div className="preview-body"><aside className="preview-sidebar"><div className="mini-mark"><img src="/icon.svg" alt="Intelletrics" /></div><div className="mini-nav active"><Layers3 size={13} /> Dashboard</div><div className="mini-nav"><FileSpreadsheet size={13} /> Upload data</div><div className="mini-nav"><MessageCircle size={13} /> AI insights</div><div className="sidebar-bottom"><div className="mini-avatar">AT</div><span>Ajay Thomas</span></div></aside>
-      <div className="preview-content"><div className="preview-heading"><div><small>UPLOADED FILE</small><h3>sales.csv</h3></div><button><Upload size={13} /> Upload another</button></div><div className="metric-row"><div className="metric"><small>ROWS</small><strong>10,000</strong><em>demo value</em></div><div className="metric"><small>COLUMNS</small><strong>8</strong><em>detected</em></div><div className="metric"><small>INSIGHTS</small><strong>4</strong><em>generated</em></div></div>
-        <div className="dashboard-sample"><div className="sample-table"><div className="sample-title">Preview <small>first 10 rows</small></div><div className="sample-row sample-head"><span>date</span><span>product</span><span>sales</span></div><div className="sample-row"><span>2024-01-01</span><span>Analytics</span><span>500</span></div><div className="sample-row"><span>2024-01-02</span><span>Explorer</span><span>720</span></div><div className="sample-row"><span>2024-01-03</span><span>Analytics</span><span>410</span></div></div><div className="mini-chart"><div className="sample-title">sales <small>histogram</small></div><div className="bars"><i style={{ height: "35%" }} /><i style={{ height: "52%" }} /><i style={{ height: "78%" }} /><i style={{ height: "96%" }} /><i style={{ height: "64%" }} /><i style={{ height: "28%" }} /></div></div></div>
-        <div className="bottom-row"><div className="question-card"><div className="sparkle-circle"><MessageCircle size={14} /></div><div><strong>Ask about your data</strong><p>Natural-language analysis</p></div><ArrowRight size={15} /></div><div className="bar-card"><small>AI INSIGHTS</small><p>Sales has 2 missing values.</p><p>Top product: Analytics.</p></div></div>
-      </div></div>
-  </div>;
-}
-
 export default function Home() {
-  return <main className="site-shell">
-    <nav className="site-nav"><Link href="/" className="brand"><span className="brand-symbol"><img src="/icon.svg" alt="Intelletrics" /></span>intelletrics</Link><div className="nav-links"><a href="#product">Product <ChevronDown size={13} /></a><a href="#features">Features <ChevronDown size={13} /></a><a href="#company">About</a><a href="https://github.com/AjayThomas-crl/Intelletrics" target="_blank" rel="noreferrer">GitHub</a></div><div className="nav-actions"><Link href="/auth/login" className="login-link">Log in</Link><Link href="/auth/signup" className="nav-cta">Get started <ArrowRight size={14} /></Link></div><button className="mobile-menu" aria-label="Open menu"><Menu size={20} /></button></nav>
-    <section className="hero" id="product"><div className="hero-copy"><div className="eyebrow"><span className="eyebrow-dot" /> AI-powered data analytics</div><h1>Turn data into<br /><span>clear insights.</span></h1><p>Upload a CSV or Excel file and get automated statistical summaries, interactive visualizations, and natural-language analysis. No code, no SQL, no setup.</p><div className="hero-actions"><Link href="/auth/signup" className="primary-button">Start for free <ArrowRight size={15} /></Link><a href="#product-preview" className="text-button">See the dashboard <ArrowDownRight size={15} /></a></div><div className="hero-note"><span className="note-check"><Check size={12} /></span><span>Built for CSV and Excel analysis</span></div></div><div className="hero-art" id="product-preview"><div className="hero-orbit orbit-one" /><div className="hero-orbit orbit-two" /><div className="floating-tag tag-one"><span className="tag-icon purple"><BarChart3 size={14} /></span><span><b>sales</b><small>histogram generated</small></span></div><div className="floating-tag tag-two"><span className="tag-icon green"><Check size={14} /></span><span><b>Demo dataset</b><small>mock values shown</small></span></div><ProductPreview /></div></section>
-    <section className="logo-strip"><p>What Intelletrics does</p><div className="capability-list"><span><Upload size={14} /> CSV / Excel upload</span><span><BarChart3 size={14} /> Auto visualizations</span><span><MessageCircle size={14} /> AI insights</span><span><Database size={14} /> Statistical profiling</span></div></section>
-    <section className="intro-section" id="features"><div className="section-kicker">Built around your workflow</div><h2>Less time wrestling with data.<br /><i>More time doing your best work.</i></h2><p className="intro-text">Upload your file, inspect the preview, explore the charts, and ask questions when you need more context.</p></section>
-    <section className="feature-grid">{features.map(({ number, icon: Icon, title, text, color }) => <article className={`feature-card ${color}`} key={number}><div className="feature-top"><span>{number}</span><span className="feature-icon"><Icon size={20} /></span></div><div><h3>{title}</h3><p>{text}</p><a href="#product">Explore feature <ArrowUpRight size={14} /></a></div></article>)}</section>
-    <section className="dark-band" id="company"><div className="dark-band-copy"><div className="section-kicker light">About the project</div><h2>Simple tools for<br /><i>real datasets.</i></h2><p>Intelletrics is an open-source project built by Ajay Thomas. It brings file upload, profiling, charts, and AI-generated insights into one focused dashboard.</p><a href="https://github.com/AjayThomas-crl/Intelletrics" target="_blank" rel="noreferrer" className="light-button">View the project <ArrowRight size={15} /></a></div><div className="dark-art"><div className="dark-circle" /><div className="dark-note note-a"><Search size={14} /><span><b>Column profiling</b><small>stats and missing values</small></span></div><div className="dark-note note-b"><Command size={14} /><span><b>Ask your dataset</b><small>natural-language analysis</small></span></div><div className="dark-note note-c"><MessageCircle size={14} /><span><b>AI insights</b><small>structured summaries</small></span></div></div></section>
-    <section className="final-cta"><div className="section-kicker">Your next insight is waiting</div><h2>Ready to analyze<br /><i>your data?</i></h2><p>Start with a CSV or Excel file.</p><Link href="/auth/signup" className="primary-button">Get started free <ArrowRight size={15} /></Link></section>
-    <footer className="site-footer"><Link href="/" className="brand"><span className="brand-symbol"><img src="/icon.svg" alt="Intelletrics" /></span>intelletrics</Link><span>© 2025 Intelletrics · Built by Ajay Thomas</span><div><a href="https://github.com/AjayThomas-crl/Intelletrics" target="_blank" rel="noreferrer">GitHub</a><Link href="/auth/login">Sign in</Link></div></footer>
-  </main>;
+  return (
+    <div className={styles.landing}>
+      <a className={styles.skipLink} href="#content">Skip to content</a>
+      <header className={styles.header}>
+        <Link href="/" className={styles.brand} aria-label="Intelletrics home"><Image src="/icon.svg" alt="" width={29} height={29} />intelletrics<span className={styles.brandPeriod}>.</span></Link>
+        <nav aria-label="Main navigation" className={styles.nav}>
+          <a href="#how-it-works" className={styles.navAbout}>How it works</a>
+          <Link href="/auth/login">Sign in</Link>
+          <Link href="/auth/signup" className={styles.navCta}>Open workspace <ArrowUpRight size={15} aria-hidden="true" /></Link>
+        </nav>
+      </header>
+
+      <section className={styles.hero} id="content">
+        <div className={styles.heroEyebrow}><span className={styles.smallSquare} /> A LITTLE CLARITY GOES A LONG WAY.</div>
+        <div className={styles.heroGrid}>
+          <h1>The answer’s in<br />your <em>spreadsheet.</em></h1>
+          <div className={styles.heroAside}>
+            <span className={styles.asideIndex}>[ DATA → UNDERSTANDING ]</span>
+            <p>Bring the file. See the patterns.<br />Ask the next question.</p>
+            <p className={styles.heroDescription}>A focused workspace for exploring CSV and Excel files, with charts, statistics, and answers grounded in your data.</p>
+            <Link href="/auth/signup" className={styles.primaryLink}>Get started <ArrowUpRight size={18} aria-hidden="true" /></Link>
+            <span className={styles.heroFine}>No code or SQL needed.</span>
+          </div>
+        </div>
+        <div className={styles.heroBottom}><span>BUILT FOR THE “WAIT, WHAT IF?” MOMENT.</span><a href="#try-it">Take a closer look <ArrowDown size={14} aria-hidden="true" /></a></div>
+      </section>
+
+      <section id="try-it" className={styles.demoSection} aria-labelledby="demo-heading">
+        <div className={styles.sectionHeading}><div><span className={styles.eyebrow}>A FILE. A QUESTION. AN ANSWER.</span><h2 id="demo-heading">Here’s what that looks like.</h2></div><p>Start with a small sales file.<br />Pick a question and see what turns up.</p></div>
+        <DatasetDemo />
+      </section>
+
+      <section id="how-it-works" className={styles.workflowSection} aria-labelledby="workflow-heading">
+        <div className={styles.workflowIntro}><span className={styles.eyebrow}>FROM FIRST LOOK TO FOLLOW-UP</span><h2 id="workflow-heading">Less fiddling.<br /><em>More finding out.</em></h2><p>All the useful parts of exploring a dataset, in one place.</p><Link href="/auth/signup" className={styles.underlinedLink}>Try it with your file <ArrowRight size={16} aria-hidden="true" /></Link></div>
+        <div className={styles.workflowList}>{workflow.map((step) => <article key={step.number} className={styles.workflowRow}><span className={styles.stepNumber}>{step.number}</span><div><h3>{step.title}</h3><p>{step.text}</p><span className={styles.stepNote}>{step.note}</span></div></article>)}</div>
+      </section>
+
+      <section className={styles.manifesto}>
+        <span className={styles.eyebrow}>BUILT WITH A SIMPLE IDEA</span>
+        <p>You shouldn’t need a whole<br className={styles.desktopBreak} /> afternoon to understand<br className={styles.desktopBreak} /> <em>one spreadsheet.</em></p>
+        <div><span>Intelletrics is an independent, open-source project.<br />Built by Ajay Thomas. Made for curious people.</span><a href="https://github.com/AjayThomas-crl/Intelletrics" target="_blank" rel="noreferrer">Look under the hood <ArrowUpRight size={15} aria-hidden="true" /></a></div>
+      </section>
+
+      <section className={styles.faqSection} aria-labelledby="faq-heading"><div><span className={styles.eyebrow}>A FEW THINGS TO KNOW</span><h2 id="faq-heading">Before you<br /><em>jump in.</em></h2></div><div className={styles.faqList}>{faqs.map((faq) => <details key={faq.question}><summary>{faq.question}<span aria-hidden="true">+</span></summary><p>{faq.answer}</p></details>)}</div></section>
+
+      <section className={styles.closing}><div><span className={styles.eyebrow}>YOUR FILE. YOUR NEXT QUESTION.</span><h2>Let’s see what’s in there.</h2></div><Link href="/auth/signup" className={styles.primaryLink}>Open your workspace <ArrowUpRight size={20} aria-hidden="true" /></Link></section>
+      <footer className={styles.footer}><Link href="/" className={styles.brand}><Image src="/icon.svg" alt="" width={23} height={23} />intelletrics.</Link><span>© {new Date().getFullYear()} · Made by Ajay Thomas</span><a href="https://github.com/AjayThomas-crl/Intelletrics" target="_blank" rel="noreferrer">Open source <ArrowUpRight size={13} aria-hidden="true" /></a></footer>
+    </div>
+  );
 }
