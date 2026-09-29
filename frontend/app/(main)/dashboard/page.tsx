@@ -17,7 +17,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useRef, useState } from "react";
-import { ChartRenderer, type BackendProfile } from "@/components/charts/chart-renderer";
+import { ChartRenderer } from "@/components/charts/chart-renderer";
 import { ChatPanel } from "@/components/chat/chat-panel";
 import { apiFetch } from "@/lib/api";
 import { Upload } from "lucide-react";
@@ -79,13 +79,6 @@ export default function Page() {
 
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const profileByColumn: Record<string, BackendProfile> = {};
-  if (uploadData?.profiles) {
-    for (const p of uploadData.profiles) {
-      profileByColumn[p.name] = p;
-    }
-  }
-
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -131,9 +124,9 @@ export default function Page() {
       </header>
 
       {/* Two-column layout: data content | chat */}
-      <div className="flex min-h-0 flex-1 overflow-hidden">
+      <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
         {/* Left: data content */}
-        <div className="min-h-0 flex-1 overflow-y-auto p-4 pt-3">
+        <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden p-4 pt-3">
           {/* Hidden file input — always in DOM */}
           <input
             type="file"
@@ -202,18 +195,25 @@ export default function Page() {
 
               {/* Data Preview Table */}
               <h1 id="preview" className="text-base font-semibold">Preview (first 10 rows)</h1>
-              <Card className="flex flex-col max-h-[400px]">
-                <CardContent className="p-0 flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
-                  <table className="w-full text-sm table-fixed border-collapse">
-                    <thead className="sticky top-0 bg-card">
+              <Card className="flex max-w-full flex-col">
+                <CardContent className="min-w-0 overflow-hidden p-0">
+                  <div
+                    role="region"
+                    aria-label="Dataset preview. Scroll horizontally to see all columns."
+                    tabIndex={0}
+                    className="max-h-[400px] overflow-auto rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <table className="w-max min-w-full border-collapse text-sm">
+                    <thead className="sticky top-0 z-10 bg-card">
                       <tr className="border-b">
                         {uploadData.column_names.map((col) => (
                           <th
                             key={col}
-                            className="text-left px-3 py-2 font-medium text-muted-foreground whitespace-nowrap"
+                            className="max-w-[200px] min-w-[120px] overflow-hidden text-ellipsis whitespace-nowrap px-3 py-2 text-left font-medium text-muted-foreground"
+                            title={col}
                           >
-                            {col}
-                          </th>
+                              {col}
+                            </th>
                         ))}
                       </tr>
                     </thead>
@@ -226,7 +226,7 @@ export default function Page() {
                           {uploadData.column_names.map((col) => (
                             <td
                               key={col}
-                              className="px-3 py-2 min-w-[100px] truncate max-w-[250px]"
+                              className="max-w-[220px] truncate px-3 py-2"
                               title={String(row[col] ?? "")}
                             >
                               {row[col] ?? "—"}
@@ -235,22 +235,17 @@ export default function Page() {
                         </tr>
                       ))}
                     </tbody>
-                  </table>
+                    </table>
+                  </div>
                 </CardContent>
               </Card>
 
               {/* Column Charts */}
               {uploadData.charts.length > 0 && (
-                <div id="profiles" className="flex flex-wrap gap-3">
+                <div id="profiles" className="grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2 2xl:grid-cols-3">
                   {uploadData.charts.map((chart, i) => (
-                    <div
-                      key={`${chart.column}-${i}`}
-                      className="w-full sm:w-[calc(50%-0.375rem)] lg:w-[calc(33.333%-0.5rem)]"
-                    >
-                      <ChartRenderer
-                        chart={chart}
-                        profile={profileByColumn[chart.column]}
-                      />
+                    <div key={`${chart.column}-${i}`} className="min-w-0">
+                      <ChartRenderer chart={chart} />
                     </div>
                   ))}
                 </div>

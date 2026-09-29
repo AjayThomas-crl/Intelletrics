@@ -1,6 +1,6 @@
 "use client";
 
-import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import {
   Card,
   CardContent,
@@ -23,32 +23,6 @@ export interface BackendChart {
   description?: string;
 }
 
-export interface BackendProfile {
-  name: string;
-  type: string;
-  missing: {
-    count: number;
-    percentage: number;
-  };
-  uniqueness: {
-    count: number;
-    ratio: number;
-  };
-  statistics?: {
-    mean?: number;
-    median?: number;
-    std?: number;
-    min?: number;
-    max?: number;
-    q1?: number;
-    q3?: number;
-  };
-  distribution?: {
-    top_value: string | number;
-    top_count: number;
-  };
-}
-
 const CHART_COLORS = [
   "var(--chart-1)",
   "var(--chart-2)",
@@ -59,16 +33,20 @@ const CHART_COLORS = [
 
 /** Adapts backend {labels, values} into recharts data and a shadcn ChartConfig */
 function adaptChart(backend: BackendChart, color?: string) {
-  const data = backend.labels.map((label, i) => ({
+  const limit = backend.chart === "bar" ? 8 : backend.labels.length;
+  const data = backend.labels.slice(0, limit).map((label, i) => ({
     label: String(label),
     value: backend.values[i] ?? 0,
   }));
+  if (backend.chart === "bar" && backend.labels.length > limit) {
+    data.push({
+      label: `Other (${backend.labels.length - limit})`,
+      value: backend.values.slice(limit).reduce((total, value) => total + value, 0),
+    });
+  }
 
   const config = {
-    value: {
-      label: backend.column,
-      color: color ?? CHART_COLORS[0],
-    },
+    value: { label: backend.column, color: color ?? CHART_COLORS[0] },
   } satisfies ChartConfig;
 
   return { data, config };
@@ -78,37 +56,37 @@ function BarChartView({ chart }: { chart: BackendChart }) {
   const { data, config } = adaptChart(chart);
 
   return (
-    <ChartContainer config={config} className="h-[220px] w-full">
-      <BarChart data={data} margin={{ left: 0, right: 0, top: 4, bottom: 4 }}>
-        <CartesianGrid vertical={false} />
-        <XAxis
+    <ChartContainer config={config} className="h-[248px] min-w-0 w-full">
+      <BarChart
+        accessibilityLayer
+        data={data}
+        layout="vertical"
+        margin={{ left: 0, right: 12, top: 4, bottom: 4 }}
+      >
+        <CartesianGrid horizontal={false} />
+        <XAxis type="number" hide />
+        <YAxis
           dataKey="label"
-          tickLine={false}
+          type="category"
           axisLine={false}
-          tickMargin={8}
-          fontSize={11}
-          interval={0}
-          angle={data.length > 8 ? -45 : 0}
-          textAnchor={data.length > 8 ? "end" : "middle"}
+          tickLine={false}
+          tickMargin={6}
+          width={86}
+          tick={{ fontSize: 10 }}
+          tickFormatter={(label: string) => label.length > 13 ? `${label.slice(0, 12)}…` : label}
         />
-        <ChartTooltip
-          content={<ChartTooltipContent nameKey="value" />}
-        />
-        <Bar
-          dataKey="value"
-          fill={CHART_COLORS[0]}
-          radius={[4, 4, 0, 0]}
-        />
+        <ChartTooltip content={<ChartTooltipContent nameKey="value" />} />
+        <Bar dataKey="value" fill={CHART_COLORS[0]} radius={[0, 4, 4, 0]} />
       </BarChart>
     </ChartContainer>
   );
 }
 
-function HistogramView({ chart }: { chart: BackendChart; profile?: BackendProfile }) {
+function HistogramView({ chart }: { chart: BackendChart }) {
   const { data, config } = adaptChart(chart, CHART_COLORS[1]);
 
   return (
-    <ChartContainer config={config} className="h-[220px] w-full">
+    <ChartContainer config={config} className="h-[252px] min-w-0 w-full">
       <BarChart data={data} margin={{ left: 0, right: 0, top: 10, bottom: 4 }} barCategoryGap={0}>
         <CartesianGrid vertical={false} />
         <XAxis
@@ -117,9 +95,10 @@ function HistogramView({ chart }: { chart: BackendChart; profile?: BackendProfil
           axisLine={false}
           tickMargin={8}
           fontSize={11}
-          interval={0}
-          angle={data.length > 8 ? -45 : 0}
+          interval="preserveStartEnd"
+          angle={data.length > 8 ? -35 : 0}
           textAnchor={data.length > 8 ? "end" : "middle"}
+          tickFormatter={(label: string) => label.length > 13 ? `${label.slice(0, 12)}…` : label}
         />
         <ChartTooltip
           content={<ChartTooltipContent nameKey="value" />}
@@ -134,13 +113,19 @@ function HistogramView({ chart }: { chart: BackendChart; profile?: BackendProfil
   );
 }
 
+function chartDescription(chart: BackendChart) {
+  if (chart.chart !== "bar" || chart.labels.length <= 8) return chart.description;
+  const note = `“Other (${chart.labels.length - 8})” combines the remaining categories.`;
+  return chart.description ? `${chart.description} ${note}` : note;
+}
+
 function ChartCard({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+    <Card className="min-w-0">
+      <CardHeader className="min-w-0 pb-2">
+        <CardTitle className="break-words text-sm font-medium">{title}</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="min-w-0">
         {children}
         {description && (
           <p className="mt-2 text-[11px] text-muted-foreground/70 leading-relaxed">
@@ -152,25 +137,25 @@ function ChartCard({ title, description, children }: { title: string; descriptio
   );
 }
 
-export function ChartRenderer({ chart, profile }: { chart: BackendChart; profile?: BackendProfile }) {
+export function ChartRenderer({ chart }: { chart: BackendChart }) {
   const chartType = chart.chart;
   
   switch (chartType) {
     case "bar":
       return (
-        <ChartCard title={chart.column} description={chart.description}>
+        <ChartCard title={chart.column} description={chartDescription(chart)}>
           <BarChartView chart={chart} />
         </ChartCard>
       );
     case "histogram":
       return (
-        <ChartCard title={chart.column} description={chart.description}>
-          <HistogramView chart={chart} profile={profile} />
+        <ChartCard title={chart.column} description={chartDescription(chart)}>
+          <HistogramView chart={chart} />
         </ChartCard>
       );
     default:
       return (
-        <ChartCard title={chart.column} description={chart.description}>
+        <ChartCard title={chart.column} description={chartDescription(chart)}>
           <BarChartView chart={chart} />
         </ChartCard>
       );
