@@ -21,7 +21,7 @@ async def readiness() -> dict:
     async with _lock:
         # Protect the database from repeated public probes, while scheduled
         # checks every six hours always perform a real database request.
-        if monotonic() - _last_success >= 60:
+        if not _last_success or monotonic() - _last_success >= 60:
             try:
                 async with httpx.AsyncClient(timeout=15) as client:
                     response = await client.get(

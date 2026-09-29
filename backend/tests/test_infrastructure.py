@@ -48,6 +48,7 @@ async def test_provider_fallback_on_status_failure():
 
 async def test_database_readiness_success_and_cache(monkeypatch):
     monkeypatch.setattr(health, "_last_success", 0)
+    monkeypatch.setattr(health, "monotonic", lambda: 1.0)
     monkeypatch.setattr(health, "SUPABASE_URL", "https://example.supabase.co")
     monkeypatch.setattr(health, "SUPABASE_PUBLISHABLE_KEY", "public-key")
     response = httpx.Response(200, json=[], request=httpx.Request("GET", "https://example.com"))
@@ -63,6 +64,7 @@ async def test_database_readiness_success_and_cache(monkeypatch):
 
 async def test_database_readiness_failure(monkeypatch):
     monkeypatch.setattr(health, "_last_success", 0)
+    monkeypatch.setattr(health, "monotonic", lambda: 1.0)
     monkeypatch.setattr(health, "SUPABASE_URL", "https://example.supabase.co")
     monkeypatch.setattr(health, "SUPABASE_PUBLISHABLE_KEY", "public-key")
     client = AsyncMock()
